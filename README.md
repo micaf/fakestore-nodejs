@@ -1,2 +1,2 @@
 # fakestore-nodejs
-Backend for fake store with node.js and express
+Backend for a Fake Store with Node.js and Express
