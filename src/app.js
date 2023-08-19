@@ -1,43 +1,21 @@
 import express from 'express';
 import { config as dotenvConfig } from 'dotenv'; 
-import ProductManager from './ProductManager.js';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
+import productsRouter from './routes/products.routes.js';
+import cartRouter from './routes/carts.routes.js';
+import swaggerOptions from './swagger-config.js'
 
 dotenvConfig();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
-const PRODUCTS_FILE = './src/products.json'
-
-// Create an instance of ProductManager with the path to the products file
-const productManager = new ProductManager(PRODUCTS_FILE); 
+const PORT = process.env.PORT || 8080;
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/api/products', productsRouter);
+app.use('/api/carts', cartRouter);
 
-// Route to fetch all products with an option to limit results
-app.get('/products', async (req, res) => {
-    try {
-        const limit = parseInt(req.query.limit); // Read the 'limit' query parameter
-        const products = await productManager.getProducts();
-        if (!isNaN(limit)) {
-            res.status(200).json(products.slice(0, limit)); // Add res.status(200)
-        } else {
-            res.status(200).json(products); // Add res.status(200)
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Error retrieving products' });
-    }
-});
-
-// Route to fetch a product by its ID
-app.get('/products/:id', async (req, res) => {
-    try {
-        const productId = parseInt(req.params.id);
-        const product = await productManager.getProductById(productId);
-        res.status(200).json(product); // Add res.status(200)
-    } catch (error) {
-        res.status(404).json({ error: error.message });
-    }
-});
 
 app.listen(PORT, () => {
     console.log(`Express server running on port ${PORT}`);

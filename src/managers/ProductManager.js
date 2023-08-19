@@ -1,4 +1,5 @@
 import fs from 'fs';
+import Product from '../models/Product.js';
 
 /**
  * Class for managing products and their persistence to a file.
@@ -16,15 +17,15 @@ class ProductManager {
         this.path = filePath;
 
         /**
-         * Next available ID to assign to a product.
-         * @type {number}
-         */
+     * Next available ID to assign to a product.
+     * @type {number}
+     */
         this.nextId = 1;
 
         /**
-        * List of products.
-        * @type {Array}
-        */
+         * List of products.
+         * @type {Array}
+         */
         this.products = [];
 
         // Initialize the class by loading existing products from the file.
@@ -57,41 +58,53 @@ class ProductManager {
     }
 
     /**
-     * Adds a new product to the list of products and saves it to the file.
-     * @param {Object} product - The product object to add.
-     * @param {string} product.title - The title of the product.
-     * @param {string} product.description - The description of the product.
-     * @param {number} product.price - The price of the product.
-     * @param {string} product.category - The category of the product.
-     * @param {string} product.image - The path to the product image.
-     * @param {string} product.code - The unique code identifier of the product.
-     * @param {number} product.stock - The quantity of units available in stock.
-     * @throws {Error} If any mandatory field is missing or if a product with the same code already exists.
+     * Validates the fields of a product.
+     * @param {Object} product - The product object to validate.
+     * @throws {Error} If any mandatory field is missing.
      */
-    async addProduct(product) {
-        const { title, description, price, category, image, code, stock } = product;
+    validateProductFields(product) {
+        const requiredFields = ["title", "description", "price", "category", "code", "stock"];
+        const missingFields = requiredFields.filter(field => !product[field]);
 
-        if (!(title && description && price && category && image && code && stock)) {
-            throw new Error("All fields are mandatory.");
+        if (missingFields.length > 0) {
+            throw new Error(`Missing fields: ${missingFields.join(", ")}`);
         }
+    }
 
+    /**
+     * Validates whether a product with the same code already exists.
+     * @param {string} code - The code of the product to validate.
+     * @throws {Error} If a product with the same code already exists.
+     */
+    validateDuplicateCode(code) {
         if (this.products.some(existingProduct => existingProduct.code === code)) {
             throw new Error("Product with the same code already exists.");
         }
+    }
 
-        const newProduct = {
-            id: this.nextId,
-            title: title,
-            description: description,
-            price: price,
-            category: category,
-            image: image,
-            code: code,
-            stock: stock
-        };
+    /**
+     * Adds a new product to the list of products and saves it to the file.
+     * @param {Object} product - The product object to add.
+     */
+    async addProduct(product) {
+        const { title, description, code, price, status, stock, category, thumbnails } = product
+        this.validateProductFields(product);
+        this.validateDuplicateCode(product.code);
 
-        this.nextId++;
+        const newProduct = new Product(
+            this.nextId, // Generate a unique ID
+            title,
+            description,
+            code,
+            price,
+            status,
+            stock,
+            category,
+            thumbnails
+        );
+
         this.products.push(newProduct);
+        this.nextId++;
         await this.saveProducts();
     }
 
@@ -103,13 +116,13 @@ class ProductManager {
         return this.products;
     }
 
-     /**
+    /**
      * Searches for and returns a product by its ID.
      * @param {number} id - The ID of the product to find.
      * @returns {Promise<Object>} - The found product object.
      * @throws {Error} If the product with the specified ID is not found.
      */
-     async getProductById(id) {
+    async getProductById(id) {
         const product = this.products.find(product => product.id === id);
 
         if (!product) {
@@ -123,17 +136,25 @@ class ProductManager {
      * Updates an existing product in the list and saves it to the file.
      * @param {number} id - The ID of the product to update.
      * @param {Object} updatedFields - The updated fields of the product.
+     * @returns {Promise<Object>} - The updated product object.
      * @throws {Error} If the product with the specified ID is not found.
      */
     async updateProduct(id, updatedFields) {
         const productIndex = this.products.findIndex(product => product.id === id);
 
-        if (productIndex !== -1) {
-            this.products[productIndex] = { ...this.products[productIndex], ...updatedFields };
-            await this.saveProducts();
-        } else {
+        if (productIndex === -1) {
             throw new Error(`Product with ID ${id} not found.`);
         }
+
+        const updatedProduct = {
+            ...this.products[productIndex],
+            ...updatedFields
+        };
+
+        this.products[productIndex] = updatedProduct;
+        await this.saveProducts();
+
+        return updatedProduct;
     }
 
     /**
@@ -152,6 +173,5 @@ class ProductManager {
         }
     }
 }
-
 
 export default ProductManager;
