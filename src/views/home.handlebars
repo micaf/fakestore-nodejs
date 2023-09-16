@@ -1,0 +1,34 @@
+<h1>Welcome to the Home Page</h1>
+<a  class="btn btn-primary cart-button">Cart</a>
+<h2>All Products</h2>
+<div id="product-list">
+     {{#each data.payload}}
+   <div class="card">
+  <div class="card-body">
+    <h5 class="card-title">{{this.title}}</h5>
+    <p class="card-text">Price: ${{this.price}}</p>
+
+    <!-- Contador y botón "Add Product" -->
+    <div class="d-flex justify-content-between align-items-center">
+      <button name="{{this._id}}" class="btn btn-primary add-to-cart-button">Add Product</button>
+    </div>
+  </div>
+</div>
+    {{/each}} 
+</div>
+
+
+<script src="js/cart.js"></script>
+
+
+  <!-- Paginación -->
+  <ul class="pagination">
+    {{#if data.prevPage}}
+      <li class="page-item"><a class="page-link" href="api/products?page={{data.prevPage}}">Previous</a></li>
+    {{/if}}
+
+    {{#if data.nextPage}}
+      <li class="page-item"><a class="page-link" href="api/products?page={{data.nextPage}}">Next</a></li>
+    {{/if}}
+  </ul>
+</div>

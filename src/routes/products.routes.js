@@ -1,14 +1,24 @@
 import { Router, urlencoded } from "express";
-import ProductManager from '../managers/ProductManager.js'
+import multer from 'multer'
+import { productModel } from "../models/products.models.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const productsRouter = Router();
 
 // Add middleware to parse URL-encoded form data
 productsRouter.use(urlencoded({ extended: true }));
 
-// Create an instance of ProductManager with the path to the products file
-const PRODUCTS_FILE = './src/data/products.json';
-const productManager = new ProductManager(PRODUCTS_FILE);
+// Define storage options for multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'src/public/img')
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}${file.originalname}`)
+    }
+})
+
+const upload = multer({ storage: storage })
 
 /**
  * @swagger
@@ -29,20 +39,55 @@ const productManager = new ProductManager(PRODUCTS_FILE);
  *       500:
  *         description: An error occurred while retrieving products.
  */
-productsRouter.get('/', async (req, res) => {
+ productsRouter.get('/', async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit);
-        const products = await productManager.getProducts();
-        if (!isNaN(limit)) {
-            res.status(200).json(products.slice(0, limit));
-        } else {
-            res.status(200).json(products); 
+        const limit = parseInt(req.query.limit) || 10;
+        const page = parseInt(req.query.page) || 1;
+        const sort = req.query.sort === 'desc' ? -1 : 1; // Ordenamiento ascendente por defecto
+        const query = req.query.query || '';
+    
+        // Condiciones de búsqueda
+        const filter = {};
+        if (req.query.category) {
+          filter.category = req.query.category;
         }
+        if (req.query.availability) {
+          filter.availability = req.query.availability === 'true';
+        }
+        if (query) {
+          filter.name = { $regex: query, $options: 'i' }; // Búsqueda insensible a mayúsculas y minúsculas
+        }
+    
+        // Consulta a la base de datos utilizando paginate
+        const options = {
+          page,
+          limit,
+          sort: { price: sort },
+        };
+    
+        const result = await productModel.paginate(filter, options);
+        const response = new ApiResponse(
+            'success',
+            result.docs.length ? result.docs.map((product) => product.toObject()) : [],
+            result.totalPages,
+            result.hasPrevPage ? page - 1 : null,
+            result.hasNextPage ? page + 1 : null,
+            page,
+            result.hasPrevPage,
+            result.hasNextPage,
+            result.hasPrevPage ? `/products?page=${page - 1}` : null,
+            result.hasNextPage ? `/products?page=${page + 1}` : null
+          );
+        res.render('home', {
+            css: "style.css",
+            data: response,
+            title: "Home",
+        })
+
     } catch (error) {
         res.status(500).json({ error: 'Error retrieving products' });
     }
 });
-
 
 /**
  * @swagger
@@ -68,8 +113,11 @@ productsRouter.get('/', async (req, res) => {
 productsRouter.get('/:pid', async (req, res) => {
     try {
         const productId = parseInt(req.params.pid);
-        const product = await productManager.getProductById(productId);
-        res.status(200).json(product); // Add res.status(200)
+        const product = await productModel.findById(productId);
+        if (product)
+            res.status(200).json(product)
+        else
+            res.status(404).send({ error: 'Product not found' })
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
@@ -122,11 +170,13 @@ productsRouter.get('/:pid', async (req, res) => {
  *       400:
  *         description: Bad request. Missing or invalid fields.
  */
-productsRouter.post('/', async (req, res) => {
+
+ productsRouter.post('/', upload.array('thumbnails', 5), async (req, res) => {
     try {
-        const newProduct = req.body //
-        const createdProduct = await productManager.addProduct(newProduct);
-        res.status(201).json(createdProduct); // 201 Created
+        const { title, description, stock, code, price, category } = req.body;
+        const thumbnails = req.files ? req.files.map(file => file.filename) : []
+        const createdProduct = await productModel.create({ title, description, stock, price, category, code, thumbnails });
+        res.status(200).json(createdProduct);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -184,15 +234,13 @@ productsRouter.post('/', async (req, res) => {
  *       404:
  *         description: Product not found.
  */
-productsRouter.put('/:pid', async (req, res) => {
+ productsRouter.put('/:pid', upload.array('thumbnails', 5), async (req, res) => {
     try {
-        const productId = parseInt(req.params.pid);
-        const updatedProduct = await productManager.updateProduct(productId, req.body);
-        res.status(200).json(updatedProduct);
+        const updatedProduct = await productModel.findByIdAndUpdate(parseInt(req.params.pid), req.body);
+        return updatedProduct ? res.status(200).json(updatedProduct) : res.status(404).send("Product Not Found");
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
-
 });
 /**
  * @swagger
@@ -214,11 +262,15 @@ productsRouter.put('/:pid', async (req, res) => {
  *       400:
  *         description: Bad request. Product not found or other error.
  */
-productsRouter.delete('/:pid', async (req, res) => {
+ productsRouter.delete('/:pid', async (req, res) => {
     try {
         const productId = parseInt(req.params.pid);
-        const productDelected = await productManager.deleteProduct(productId);
-        res.status(204).send("Product successfully removed");
+        const productDeleted = await productModel.findByIdAndDelete(productId);
+        if (productDeleted) {
+            res.status(204).send("Product successfully removed");
+        } else {
+            res.status(404).send("Product not found");
+        }
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

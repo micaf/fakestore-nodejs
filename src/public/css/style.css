@@ -1,0 +1,136 @@
+/* Reset default styles and apply base styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f2f2f2;
+}
+
+/* Center content within a container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Style for product cards */
+.card {
+  border: 1px solid #ddd;
+  background-color: #fff;
+  margin: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s;
+  border-radius: 15px;
+}
+
+.card:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.card-body {
+  padding: 15px;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.card-text {
+  font-size: 1rem;
+  color: #555;
+  margin: 10px 0;
+}
+
+/* Heading styles */
+h1 {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+h2 {
+  margin-left: 20px;
+}
+
+/* Product list display */
+#product-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+
+
+
+/* List of products */
+#productList {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+#productList li {
+  margin-bottom: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f8f8f8;
+  font-size: 14px;
+}
+
+/* Button styles */
+.btn{
+  display: inline-block;
+  margin-top: 20px;
+  text-decoration: none;
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+/* Positioning of buttons */
+.btn {
+  margin-left: 20px;
+}
+
+/* Button hover effect */
+.btn:hover {
+  background-color: #555;
+}
+
+
+
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  justify-content: center;
+}
+
+.page-item {
+  margin: 0 5px;
+  font-size: 16px;
+}
+
+.page-link {
+  text-decoration: none;
+  color: #555; /* Color del enlace */
+  background-color: #fff; /* Fondo del enlace */
+  border: 1px solid #555; /* Borde del enlace */
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.page-link:hover {
+  background-color: #555; /* Cambio de fondo al pasar el cursor */
+  color: #fff; /* Cambio de color al pasar el cursor */
+}
+
+.page-item.disabled .page-link {
+  background-color: #ccc; /* Fondo de enlace deshabilitado */
+  color: #888; /* Color de enlace deshabilitado */
+  cursor: not-allowed;
+}
