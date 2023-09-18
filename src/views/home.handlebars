@@ -7,8 +7,6 @@
   <div class="card-body">
     <h5 class="card-title">{{this.title}}</h5>
     <p class="card-text">Price: ${{this.price}}</p>
-
-    <!-- Contador y botón "Add Product" -->
     <div class="d-flex justify-content-between align-items-center">
       <button name="{{this._id}}" class="btn btn-primary add-to-cart-button">Add Product</button>
     </div>
@@ -21,7 +19,7 @@
 <script src="js/cart.js"></script>
 
 
-  <!-- Paginación -->
+  <!-- Pagination -->
   <ul class="pagination">
     {{#if data.prevPage}}
       <li class="page-item"><a class="page-link" href="api/products?page={{data.prevPage}}">Previous</a></li>

@@ -1,2 +1,21 @@
 <a href="/api/products" class="btn btn-primary btn-right">Back to Home</a>
 
+ <h1>Your Shopping Cart</h1>
+  <p>Cart ID: {{cartId}}</p>
+  <!-- List of products -->
+  <ul>
+    {{#each products}}
+      <li>
+        <h2>{{this._doc.id_prod._doc.title}}</h2>
+        <p>Price: ${{this._doc.id_prod._doc.price}}</p>
+        <p>Quantity: {{this._doc.quantity}}</p>
+      </li>
+    {{/each}}
+  </ul>
+
+
+
+
+
+
+

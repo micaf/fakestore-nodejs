@@ -1,12 +1,13 @@
-// Función para obtener el cart_id del localStorage
+// Function to obtain the cart_id of the localStorage
 function getCartId() {
     return localStorage.getItem('cart_id');
 }
 
-// Función para crear un nuevo carrito y almacenar su ID en el localStorage
+// Function to create a new cart and store its ID in localStorage
 async function createCartAndStoreId() {
+
     try {
-        const response = await fetch('/carts', {
+        const response = await fetch('api/carts', {
             method: 'POST',
         });
 
@@ -26,20 +27,83 @@ async function createCartAndStoreId() {
     }
 }
 
+async function getCart(cartId) {
+
+    // Make a request to the server to get the cart data
+    fetch('api/carts/' + cartId)
+        .then(response => response.json())
+        .then(data => {
+            return data;
+        })
+        .catch(error => {
+            console.error('Error fetching cart data:', error);
+        });
+}
+
+// Function to add a product to the cart
+async function addProductToCart(cartId, productId, quantity) {
+    try {
+        const response = await fetch(`api/carts/${cartId}/product/${productId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ quantity }),
+        });
+        if (!response.ok) {
+            throw new Error('Error adding product to cart');
+        }
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Function for updating the quantity of a product in the cart
+async function updateProductInCart(cartId, productId, quantity) {
+    try {
+        const response = await fetch(`api/carts/${cartId}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ quantity }),
+        });
+        if (!response.ok) {
+            throw new Error('Error updating product quantity in cart');
+        }
+    } catch (error) {
+        throw error;
+    }
+}
 
 
-document.addEventListener('DOMContentLoaded', async() => {
-    // Verificar si ya existe un cart_id en el localStorage
+async function getCartProducts(cartId) {
+    try {
+        const response = await fetch('api/carts/' + cartId);
+        if (!response.ok) {
+            throw new Error('Error fetching cart data');
+        }
+        const data = await response.json();
+        return data.message;
+    } catch (error) {
+        console.error('Error fetching cart data:', error);
+        return null;
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check if a cart_id already exists in the localStorage
     let cartId = getCartId();
 
     if (!cartId) {
-        await createCartAndStoreId();
+        cartId = await createCartAndStoreId();
     }
 
     const cartButton = document.querySelector('.cart-button');
 
     cartButton.addEventListener('click', () => {
-        window.location.href = `api/carts/${cartId}`;
+        window.location.href = `api/carts/cartView/${cartId}`;
     })
 
 
@@ -48,30 +112,22 @@ document.addEventListener('DOMContentLoaded', async() => {
 
     addToCartButtons.forEach(button => {
         button.addEventListener('click', async () => {
-            const productId = button.getAttribute('name'); // Obtener el ID del producto desde el atributo "data-product-id"
-
-            // Cantidad predeterminada (puedes personalizar esto)
+            const productId = button.getAttribute('name');
             const quantity = 1;
+            const cart = await getCartProducts(cartId);
 
             try {
-                // Realizar la solicitud POST al servidor utilizando fetch
-                const response = await fetch(`api/carts/${cartId}/product/${productId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ quantity }),
-                });
-                if (response.ok) {
-                    // La solicitud fue exitosa, puedes manejar la respuesta aquí (por ejemplo, mostrar un mensaje de éxito).
-                    alert('Product added to cart successfully');
+                // Check if the product already exists in the cart
+                const existingProduct = cart.products.find(item => item.id_prod._id === productId);
+                if (existingProduct) {
+                    const newQuantity = existingProduct.quantity + quantity;
+                    await updateProductInCart(cartId, productId, newQuantity);
                 } else {
-                    // La solicitud falló, maneja el error aquí (por ejemplo, muestra un mensaje de error).
-                    alert('Error adding product to cart');
+                    // If the product does not exist in the cart, add it to the cart
+                    await addProductToCart(cartId, productId, quantity);
                 }
+                alert('Product added to cart successfully');
             } catch (error) {
-                // Manejar errores de red u otros errores aquí.
-                console.error(error);
                 alert('An error occurred');
             }
         });
